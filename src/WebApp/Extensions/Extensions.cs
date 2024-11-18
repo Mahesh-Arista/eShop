@@ -98,16 +98,15 @@ public static class Extensions
 
     private static void AddAIServices(this IHostApplicationBuilder builder)
     {
-        string? ollamaEndpoint = builder.Configuration["AI:Ollama:Endpoint"];
-        if (!string.IsNullOrWhiteSpace(ollamaEndpoint))
+        if (builder.Configuration["OllamaEnabled"] is string ollamaEnabled && bool.Parse(ollamaEnabled))
         {
+            builder.AddKeyedOllamaSharpChatClient("chat");
             builder.Services.AddChatClient(b => b
                 .UseFunctionInvocation()
                 .UseOpenTelemetry(configure: t => t.EnableSensitiveData = true)
                 .UseLogging()
-                .Use(new OllamaChatClient(
-                    new Uri(ollamaEndpoint),
-                    builder.Configuration["AI:Ollama:ChatModel"] ?? "llama3.1")));
+                // Use the OllamaSharp chat client
+                .Use(b.Services.GetRequiredKeyedService<IChatClient>("chat")));
         }
         else
         {
